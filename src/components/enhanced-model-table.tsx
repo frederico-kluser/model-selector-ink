@@ -18,6 +18,8 @@ import { parseFilterString, applyFilters } from './filter-parser.js';
 import { FilterBuilderModal } from './filter-builder-modal.js';
 import { ColumnSelectorModal } from './column-selector-modal.js';
 import { SortSelectorModal } from './sort-selector-modal.js';
+import { ModelDetailModal } from './model-detail-modal.js';
+import { HelpModal } from './help-modal.js';
 import {
   COLUMNS, DEFAULT_VISIBLE_METRICS, FILTER_LABELS, FILTER_CYCLE,
   pad, padR,
@@ -89,6 +91,8 @@ export const EnhancedModelTable = ({
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
   const [sortSelectorOpen, setSortSelectorOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Column visibility (only metric/speed columns toggleable)
   const [visibleMetrics, setVisibleMetrics] = useState<ReadonlySet<string>>(DEFAULT_VISIBLE_METRICS);
@@ -107,10 +111,10 @@ export const EnhancedModelTable = ({
   const termRows = computeDim(rawRows, heightPercent, 10);
   const widthConstrained = widthPercent !== undefined && widthPercent !== 100;
   const heightConstrained = heightPercent !== undefined && heightPercent !== 100;
-  const anyModalOpen = filterModalOpen || columnSelectorOpen || sortSelectorOpen;
-  // Footer: marginTop(1) + nav-rows(wraps on narrow terminals) + col-indicator(1) + padding-bottom(1)
-  // Nav help items total ~160 chars; estimate wrap lines from terminal width
-  const footerNavLines = Math.max(1, Math.ceil(160 / Math.max(1, termCols - 2)));
+  const anyModalOpen = filterModalOpen || columnSelectorOpen || sortSelectorOpen || detailOpen || helpOpen;
+  // Footer: marginTop(1) + hint-rows(wraps on narrow terminals) + status(1) + padding-bottom(1)
+  // Compact hint line totals ~95 chars; estimate wrap lines from terminal width
+  const footerNavLines = Math.max(1, Math.ceil(95 / Math.max(1, termCols - 2)));
   const footerLines = (filterActive || anyModalOpen) ? 1 : (1 + footerNavLines + 1 + 1);
   const headerLines = HEADER_BASE + (title ? HEADER_TITLE_EXTRA : 0);
   const maxRows = Math.max(1, termRows - headerLines - footerLines);
@@ -188,23 +192,30 @@ export const EnhancedModelTable = ({
 
   // Navegacao da tabela
   useInput((input, key) => {
+    if (input === '?') { setHelpOpen(true); return; }
     if (key.escape && onCancel) { onCancel(); return; }
-    if (input === 'f' && !key.shift) { setFilterActive(true); return; }
+    if ((input === 'f' || input === '/') && !key.shift) { setFilterActive(true); return; }
     if (input === 'F' || (input === 'f' && key.shift)) { setFilterModalOpen(true); return; }
     if (input === 'c') { setColumnSelectorOpen(true); return; }
     if (input === 's' && !key.shift) { setSortSelectorOpen(true); return; }
     if (input === 'S' || (input === 's' && key.shift)) setSortAsc((prev) => !prev);
     if (input === 'u' && onRefresh && !refreshing) { onRefresh(); return; }
+    // Detalhes do modelo focado
+    if ((input === 'i' || key.tab) && sorted[safeCursor]) { setDetailOpen(true); return; }
 
-    // Vertical
-    if (key.downArrow) setCursor((c) => Math.min(c + 1, sorted.length - 1));
-    if (key.upArrow) setCursor((c) => Math.max(c - 1, 0));
+    // Vertical (setas + vim j/k)
+    if (key.downArrow || input === 'j') setCursor((c) => Math.min(c + 1, sorted.length - 1));
+    if (key.upArrow || input === 'k') setCursor((c) => Math.max(c - 1, 0));
 
-    // Page navigation: < > and PageUp/PageDown
-    if (input === '<' || input === ',') setCursor((c) => Math.max(c - pageSize, 0));
-    if (input === '>' || input === '.') setCursor((c) => Math.min(c + pageSize, sorted.length - 1));
+    // Topo / fim (g/G, Home/End)
+    if (input === 'g' || (key.ctrl && input === 'a')) setCursor(0);
+    if (input === 'G' || (key.ctrl && input === 'e')) setCursor(Math.max(0, sorted.length - 1));
     if (key.pageDown) setCursor((c) => Math.min(c + pageSize, sorted.length - 1));
     if (key.pageUp) setCursor((c) => Math.max(c - pageSize, 0));
+
+    // Page navigation: < > and , .
+    if (input === '<' || input === ',') setCursor((c) => Math.max(c - pageSize, 0));
+    if (input === '>' || input === '.') setCursor((c) => Math.min(c + pageSize, sorted.length - 1));
 
     // Horizontal
     if (key.rightArrow) setColOffset((c) => Math.min(c + 1, maxColOffset));
@@ -280,7 +291,24 @@ export const EnhancedModelTable = ({
       </Box>
 
       {/* ── Content ── */}
-      {filterModalOpen ? (
+      {helpOpen ? (
+        <Box marginTop={1}>
+          <HelpModal
+            onClose={() => setHelpOpen(false)}
+            hasRefresh={!!onRefresh}
+            hasCancel={!!onCancel}
+          />
+        </Box>
+      ) : detailOpen && sorted[safeCursor] ? (
+        <Box marginTop={1}>
+          <ModelDetailModal
+            model={sorted[safeCursor]!}
+            maxHeight={maxRows}
+            onSelect={() => { setDetailOpen(false); onSelect(sorted[safeCursor]!); }}
+            onClose={() => setDetailOpen(false)}
+          />
+        </Box>
+      ) : filterModalOpen ? (
         <Box marginTop={1}>
           <FilterBuilderModal
             filterText={filter}
@@ -338,41 +366,56 @@ export const EnhancedModelTable = ({
                     </Text>
                   );
                 })}
-                {active && <Text> {'<'}</Text>}
+                {active && <Text color="cyan"> {'◀'}</Text>}
               </Box>
             );
           })}
 
-          {sorted.length === 0 && <Text dimColor>Nenhum modelo encontrado</Text>}
+          {sorted.length === 0 && (
+            <Box flexDirection="column">
+              <Text color="yellow">Nenhum modelo corresponde aos filtros atuais.</Text>
+              <Text dimColor>Pressione f para editar o filtro, p para trocar o preset ou ? para ajuda.</Text>
+            </Box>
+          )}
         </Box>
       )}
 
       {/* ── Footer (hidden during filter/modal modes) ── */}
       {!filterActive && !anyModalOpen && (
         <Box marginTop={1} flexDirection="column">
+          {/* Linha 1: atalhos essenciais \u2014 referencia completa em '?' */}
           <Box gap={1} flexWrap="wrap">
             <Text color="cyan">{'\u2191\u2193'}</Text><Text dimColor>navegar</Text>
-            <Text color="cyan">{'<>'}</Text><Text dimColor>pagina</Text>
-            <Text color="cyan">{'\u2190\u2192'}</Text><Text dimColor>colunas</Text>
-            <Text color="green">s</Text><Text dimColor>ordenar</Text>
-            <Text color="green">S</Text><Text dimColor>direcao</Text>
-            <Text color="green">c</Text><Text dimColor>metricas</Text>
-            <Text color="green">f</Text><Text dimColor>filtro</Text>
-            <Text color="green">F</Text><Text dimColor>construtor</Text>
-            <Text color="green">p</Text><Text dimColor>preset</Text>
+            <Text dimColor>{'\u00B7'}</Text>
             <Text color="white">Enter</Text><Text dimColor>selecionar</Text>
-            {onRefresh && <><Text color="green">u</Text><Text dimColor>{refreshing ? 'atualizando...' : 'atualizar'}</Text></>}
-            {onCancel && <><Text color="red">ESC</Text><Text dimColor>voltar</Text></>}
-            <Text dimColor>{sorted.length}/{models.length}</Text>
-            {cacheAge != null && <Text dimColor>cache: {formatCacheAge(cacheAge)}</Text>}
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="green">i</Text><Text dimColor>detalhes</Text>
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="green">f</Text><Text dimColor>filtro</Text>
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="green">s</Text><Text dimColor>ordenar</Text>
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="green">c</Text><Text dimColor>colunas</Text>
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="green">p</Text><Text dimColor>preset</Text>
+            {onRefresh && <><Text dimColor>{'\u00B7'}</Text><Text color="green">u</Text><Text dimColor>{refreshing ? 'atualizando\u2026' : 'atualizar'}</Text></>}
+            <Text dimColor>{'\u00B7'}</Text>
+            <Text color="yellow">?</Text><Text dimColor>ajuda</Text>
+            {onCancel && <><Text dimColor>{'\u00B7'}</Text><Text color="red">ESC</Text><Text dimColor>sair</Text></>}
           </Box>
 
-          {(colOffset > 0 || colOffset < maxColOffset) && (
-            <Box gap={2}>
-              {colOffset > 0 && <Text color="yellow">{'\u25C0'} colunas a esquerda</Text>}
-              {colOffset < maxColOffset && <Text color="yellow">colunas a direita {'\u25B6'}</Text>}
-            </Box>
-          )}
+          {/* Linha 2: status \u2014 posicao, contagem, scroll de colunas, cache */}
+          <Box gap={1} flexWrap="wrap">
+            {sorted.length > 0 ? (
+              <Text dimColor>linha {safeCursor + 1}/{sorted.length}</Text>
+            ) : (
+              <Text color="yellow">sem resultados {filter || filterMode !== 'none' ? '\u2014 limpe o filtro (f) ou preset (p)' : ''}</Text>
+            )}
+            {sorted.length > 0 && <><Text dimColor>{'\u00B7'}</Text><Text dimColor>{sorted.length} de {models.length} modelos</Text></>}
+            {colOffset > 0 && <><Text dimColor>{'\u00B7'}</Text><Text color="yellow">{'\u25C0'} mais colunas</Text></>}
+            {colOffset < maxColOffset && <><Text dimColor>{'\u00B7'}</Text><Text color="yellow">mais colunas {'\u25B6'}</Text></>}
+            {cacheAge != null && <><Text dimColor>{'\u00B7'}</Text><Text dimColor>cache: {formatCacheAge(cacheAge)}</Text></>}
+          </Box>
         </Box>
       )}
     </Box>

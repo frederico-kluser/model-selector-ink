@@ -34,8 +34,8 @@ export const ColumnSelectorModal = ({ visibleKeys, onClose, maxHeight = 16 }: Co
 
   useInput((input, key) => {
     if (key.escape) { onClose(selected); return; }
-    if (key.downArrow) setCursor((c) => Math.min(c + 1, METRIC_COLUMNS.length - 1));
-    if (key.upArrow) setCursor((c) => Math.max(c - 1, 0));
+    if (key.downArrow || input === 'j') setCursor((c) => Math.min(c + 1, METRIC_COLUMNS.length - 1));
+    if (key.upArrow || input === 'k') setCursor((c) => Math.max(c - 1, 0));
 
     if (input === ' ' || key.return) {
       const col = METRIC_COLUMNS[cursor];

@@ -20,6 +20,11 @@ export interface ColumnDef {
   readonly group: 'base' | 'benchmark' | 'speed';
   /** Se a coluna pode ser usada como criterio de ordenacao */
   readonly sortable: boolean;
+  /**
+   * Para esta metrica, valores menores sao melhores (ex: preco, latencia).
+   * Usado para sugerir a direcao de ordenacao mais util por padrao.
+   */
+  readonly lowerIsBetter?: boolean;
   readonly getValue: (m: EnrichedModel) => number | null;
   readonly format: (m: EnrichedModel) => string;
   readonly color?: (m: EnrichedModel) => string | undefined;
@@ -53,16 +58,16 @@ const fLat = (val: number | null): string => val === null ? '-' : val.toFixed(2)
 export const COLUMNS: readonly ColumnDef[] = [
   // Base
   { key: 'name', label: 'Nome', description: 'Nome do modelo', width: 26, align: 'left', group: 'base', sortable: false,
-    getValue: () => null, format: (m) => m.name.slice(0, 25) },
+    getValue: () => null, format: (m) => truncate(m.name, 25) },
   { key: 'provider', label: 'Provider', description: 'Provider/empresa', width: 12, align: 'left', group: 'base', sortable: false,
-    getValue: () => null, format: (m) => m.provider.slice(0, 11) },
+    getValue: () => null, format: (m) => truncate(m.provider, 11) },
   { key: 'context', label: 'Ctx', description: 'Janela de contexto (K tokens)', width: 6, align: 'right', group: 'base', sortable: true,
     getValue: (m) => m.contextWindow, format: (m) => formatContext(m.contextWindow),
     color: (m) => m.contextWindow >= 200 ? 'green' : m.contextWindow >= 100 ? 'yellow' : undefined },
-  { key: 'inputPrice', label: '$In/M', description: 'Preco input (USD por 1M tokens)', width: 8, align: 'right', group: 'base', sortable: true,
+  { key: 'inputPrice', label: '$In/M', description: 'Preco input (USD por 1M tokens)', width: 8, align: 'right', group: 'base', sortable: true, lowerIsBetter: true,
     getValue: (m) => m.inputPrice, format: (m) => formatPrice(m.inputPrice),
     color: (m) => priceColor(m.inputPrice) },
-  { key: 'outputPrice', label: '$Out/M', description: 'Preco output (USD por 1M tokens)', width: 8, align: 'right', group: 'base', sortable: true,
+  { key: 'outputPrice', label: '$Out/M', description: 'Preco output (USD por 1M tokens)', width: 8, align: 'right', group: 'base', sortable: true, lowerIsBetter: true,
     getValue: (m) => m.outputPrice, format: (m) => formatPrice(m.outputPrice),
     color: (m) => priceColor(m.outputPrice) },
   { key: 'tools', label: 'Tools', description: 'Suporte a tools/function calling', width: 5, align: 'right', group: 'base', sortable: false,
@@ -117,7 +122,7 @@ export const COLUMNS: readonly ColumnDef[] = [
     getValue: (m) => m.aa.speed.outputTokensPerSecond,
     format: (m) => fSpeed(m.aa.speed.outputTokensPerSecond),
     color: (m) => speedColor(m.aa.speed.outputTokensPerSecond) },
-  { key: 'ttft', label: 'TTFT', description: 'Time to First Token — latencia ate o primeiro token (segundos)', width: 7, align: 'right', group: 'speed', sortable: true,
+  { key: 'ttft', label: 'TTFT', description: 'Time to First Token — latencia ate o primeiro token (segundos)', width: 7, align: 'right', group: 'speed', sortable: true, lowerIsBetter: true,
     getValue: (m) => m.aa.speed.timeToFirstToken,
     format: (m) => fLat(m.aa.speed.timeToFirstToken) },
   // Computed
@@ -177,3 +182,14 @@ export const pad = (str: string, len: number): string =>
 
 export const padR = (str: string, len: number): string =>
   str.length >= len ? str.slice(0, len) : ' '.repeat(len - str.length) + str;
+
+/**
+ * Trunca uma string adicionando reticencias quando excede o limite,
+ * sinalizando visualmente que o conteudo foi cortado.
+ */
+export const truncate = (str: string, len: number): string =>
+  str.length > len ? str.slice(0, len - 1) + '…' : str;
+
+/** Direcao de ordenacao padrao mais util para uma coluna (asc se menor=melhor). */
+export const defaultSortAsc = (col: ColumnDef | undefined): boolean =>
+  col?.lowerIsBetter ?? false;

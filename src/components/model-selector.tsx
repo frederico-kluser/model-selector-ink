@@ -8,7 +8,7 @@
  * @module
  */
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import type { EnrichedModel } from '../data/enriched-model.js';
 import { buildEnrichedModels } from '../data/enriched-model.js';
@@ -16,6 +16,20 @@ import { useModels } from '../hooks/use-models.js';
 import { useArtificialAnalysis } from '../hooks/use-artificial-analysis.js';
 import { resolveApiKeys } from '../services/api-key-resolver.js';
 import { EnhancedModelTable } from './enhanced-model-table.js';
+
+// ── Spinner ─────────────────────────────────────────────────────────
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+/** Spinner braille animado para estados de carregamento. */
+const Spinner = () => {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % SPINNER_FRAMES.length), 80);
+    return () => clearInterval(id);
+  }, []);
+  return <Text color="cyan">{SPINNER_FRAMES[frame]}</Text>;
+};
 
 // ── Props ───────────────────────────────────────────────────────────
 
@@ -121,8 +135,10 @@ export const ModelSelector = ({
   // Loading state
   if (modelsState.status === 'loading') {
     return (
-      <Box padding={1}>
-        <Text color="cyan">Carregando modelos...</Text>
+      <Box padding={1} gap={1}>
+        <Spinner />
+        <Text color="cyan">Carregando modelos do OpenRouter…</Text>
+        {resolved.artificialAnalysisApiKey && <Text dimColor>+ benchmarks da Artificial Analysis</Text>}
       </Box>
     );
   }
@@ -131,8 +147,12 @@ export const ModelSelector = ({
   if (modelsState.status === 'error') {
     return (
       <Box flexDirection="column" padding={1}>
-        <Text color="red">Erro ao carregar modelos: {modelsState.error}</Text>
-        {onCancel && <Text dimColor>Pressione ESC para voltar</Text>}
+        <Box gap={1}>
+          <Text color="red" bold>✗ Falha ao carregar modelos</Text>
+        </Box>
+        <Text color="red">{modelsState.error}</Text>
+        <Text dimColor>Verifique a conexao de rede ou a API key do OpenRouter.</Text>
+        {onCancel && <Text dimColor>Pressione ESC para voltar.</Text>}
       </Box>
     );
   }
