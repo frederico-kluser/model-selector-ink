@@ -36,6 +36,8 @@
     "node": ">=20"
   },
   "scripts": {
+    "fetch-benchmarks": "npx tsx scripts/fetch-benchmarks.ts",
+    "prebuild": "npm run fetch-benchmarks",
     "build": "tsc && cp src/data/bundled-benchmarks.json dist/data/bundled-benchmarks.json",
     "dev": "npx tsx src/dev.tsx",
     "lint": "eslint src/",
