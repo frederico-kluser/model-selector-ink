@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { ColumnDef } from './table-columns.js';
+import { defaultSortAsc, type ColumnDef } from './table-columns.js';
 
 export interface SortSelectorModalProps {
   /** Colunas sortable atualmente disponiveis */
@@ -45,10 +45,18 @@ export const SortSelectorModal = ({
   const [cursor, setCursor] = useState(initIdx);
   const [asc, setAsc] = useState(ascending);
 
+  // Ao mover para outra metrica, sugere a direcao mais util (menor=melhor → asc);
+  // mantem a direcao atual ao focar a coluna ja ordenada. 'S' sempre sobrescreve.
+  const moveTo = (next: number) => {
+    setCursor(next);
+    const col = columns[next];
+    if (col) setAsc(col.key === currentKey ? ascending : defaultSortAsc(col));
+  };
+
   useInput((input, key) => {
     if (key.escape) { onCancel(); return; }
-    if (key.downArrow) setCursor((c) => Math.min(c + 1, columns.length - 1));
-    if (key.upArrow) setCursor((c) => Math.max(c - 1, 0));
+    if (key.downArrow || input === 'j') moveTo(Math.min(cursor + 1, columns.length - 1));
+    if (key.upArrow || input === 'k') moveTo(Math.max(cursor - 1, 0));
     if (input === 'S' || (input === 's' && key.shift)) setAsc((prev) => !prev);
     if (key.return) {
       const col = columns[cursor];

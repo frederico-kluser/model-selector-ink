@@ -589,19 +589,28 @@ const roundTrip = serializeFilters(rules);
 
 | Key | Action |
 |-----|--------|
-| `↑↓` | Move between rows or modal items |
+| `↑↓` or `j`/`k` | Move between rows or modal items |
 | `<>` or `,.` | Page up/down |
 | `PageUp/PageDown` | Page up/down |
+| `g` / `G` | Jump to top / bottom |
+| `Ctrl+A` / `Ctrl+E` | Jump to top / bottom |
 | `←→` | Horizontal column scroll |
-| `s` | Open sort selector |
+| `i` or `Tab` | Open model detail panel |
+| `?` | Open keyboard help |
+| `s` | Open sort selector (suggests a sensible direction per metric) |
 | `S` | Toggle sort direction |
 | `c` | Open column selector |
-| `f` | Enter inline filter input |
+| `f` or `/` | Enter inline filter input |
 | `F` | Open filter builder modal |
 | `p` | Cycle preset filters |
 | `u` | Refresh from APIs |
 | `Enter` | Select current row |
 | `ESC` | Cancel or close the active modal |
+
+Press `?` at any time to see the full shortcut reference in-app. The detail
+panel (`i` / `Tab`) shows the focused model's untruncated name, full id, all
+capabilities, every benchmark (including columns hidden from the table), speed,
+and pricing — then `Enter` selects it.
 
 Preset filter cycle:
 
