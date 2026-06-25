@@ -845,7 +845,23 @@ npm run dev -- --width=-10
 
 Values must be 1-100 (percentage) or negative (offset from full size). The dev header displays the configured size when any flag is set.
 
-`npm run build` compiles TypeScript and copies `src/data/bundled-benchmarks.json` into `dist/data/`.
+`npm run build` runs `prebuild` (`npm run fetch-benchmarks`) first, then compiles TypeScript and copies `src/data/bundled-benchmarks.json` into `dist/data/`.
+
+### Refreshing the offline snapshot
+
+`src/data/bundled-benchmarks.json` is the offline fallback baked into the published package (used only on the very first run, before any disk cache exists). At **runtime the library is always API-first** — every execution re-fetches the live OpenRouter list/prices and (when an AA key is present) the live Artificial Analysis benchmarks, then refreshes the disk cache — so this snapshot is purely a cold-start fallback.
+
+To keep that fallback current, `npm run fetch-benchmarks` regenerates it from the live APIs:
+
+```bash
+# OpenRouter list + prices always; AA benchmarks only if a key is resolvable
+npm run fetch-benchmarks
+
+# Include fresh benchmarks/speed by providing an Artificial Analysis key
+ARTIFICIAL_ANALYSIS_API_KEY=aa-... npm run fetch-benchmarks
+```
+
+It resolves API keys the same way as the runtime (`.env` in CWD → `process.env` → global config), never fails the build (on network/API error it preserves the existing snapshot data), and runs automatically before every `npm run build` via the `prebuild` hook. When run without an AA key, the existing AA benchmarks in the snapshot are preserved and only the OpenRouter slice is refreshed.
 
 ## License
 
