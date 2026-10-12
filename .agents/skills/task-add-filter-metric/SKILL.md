@@ -8,7 +8,7 @@ metadata:
 
 # Add a Filter Metric
 
-Load `knowledge-table-ui` and `knowledge-code-style` first.
+Retrieve CoALA `knowledge-table-ui` and `knowledge-code-style` first.
 
 ## When to use
 
@@ -39,7 +39,7 @@ appear in the filter builder modal.
   for metrics despite the file header comment.
 - A null accessor result means "exclude from this metric filter" (model fails it).
 
-## <evolution>
+## registo de aprendizado (memória CoALA local)
 
 On completion:
 1. Only persist learnings if `npm run typecheck` and `npm run lint` passed.
@@ -47,5 +47,5 @@ On completion:
    correction. Skip the obvious.
 3. Append to `LEARNINGS.md` with date + source (user > inference).
 4. If a stable pattern emerged, distill it into the Procedure and bump `version`.
-5. If a new knowledge area appeared, invoke `meta-skill-evolution`.
+5. If a new knowledge area appeared, invoke a memória CoALA local (`coala.py add`).
 6. Leave the change as a git diff for human review — do not self-merge.

@@ -8,8 +8,8 @@ metadata:
 
 # Add a Table Column
 
-Load `knowledge-table-ui` and `knowledge-code-style` first. If the value comes
-from a new API field, also load `knowledge-data-pipeline`.
+Retrieve CoALA `knowledge-table-ui` and `knowledge-code-style` first. If the value comes
+from a new API field, also retrieve CoALA `knowledge-data-pipeline`.
 
 ## When to use
 
@@ -20,7 +20,7 @@ column in the table, optionally sortable and color-coded.
 
 1. **Confirm the value is reachable** on `EnrichedModel`. If not, add it first:
    schema field in `data/*-client.ts` → mapping in `toModelEntry`/`buildEnrichedModels`
-   → type in `models.ts`/`enriched-model.ts`. (That sub-task is `knowledge-data-pipeline` work.)
+   → type in `models.ts`/`enriched-model.ts`. (That sub-task is CoALA `knowledge-data-pipeline` work.)
 2. **Add a `ColumnDef`** to `COLUMNS` in `components/table-columns.ts`. Match the
    existing object style on one line per field group:
    - Pick `group` (`base` always-visible; `benchmark`/`speed` toggleable).
@@ -41,7 +41,7 @@ column in the table, optionally sortable and color-coded.
   Index metrics (intel/code/math) are already 0–100 → use `fb100`.
 - Keep `table-columns.ts` under the 500-line file warn limit; extract helpers if needed.
 
-## <evolution>
+## registo de aprendizado (memória CoALA local)
 
 On completion:
 1. Only persist learnings if `npm run typecheck` and `npm run lint` passed.
@@ -49,5 +49,5 @@ On completion:
    that needed tuning, a metric scale subtlety, a user correction. Skip the obvious.
 3. Append to `LEARNINGS.md` with date + source (user correction > your inference).
 4. If a stable pattern emerged, distill it into the Procedure above and bump `version`.
-5. If a genuinely new knowledge area appeared, invoke `meta-skill-evolution`.
+5. If a genuinely new knowledge area appeared, invoke a memória CoALA local (`coala.py add`).
 6. Leave the change as a git diff for human review — do not self-merge skill edits.

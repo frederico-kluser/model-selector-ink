@@ -43,7 +43,7 @@ git push && git push --tags
 - Don't bump the version by editing `package.json` directly — let the script do it so
   the commit/tag/publish stay in sync.
 
-## <evolution>
+## registo de aprendizado (memória CoALA local)
 
 On completion:
 1. Persist learnings only if the release actually published.

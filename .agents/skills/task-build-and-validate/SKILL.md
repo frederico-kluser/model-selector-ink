@@ -37,7 +37,7 @@ Benchmark columns only render when an AA key is supplied.
   silent miss — grep `src/index.ts` to confirm it's there.
 - `npm run dev` needs a TTY; in non-interactive CI just run typecheck+lint+build.
 
-## <evolution>
+## registo de aprendizado (memória CoALA local)
 
 On completion:
 1. Persist learnings only if the commands above passed.

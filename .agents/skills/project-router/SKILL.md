@@ -17,22 +17,23 @@ re-deriving it from a cold scan.
 
 1. **Classify the task:** which layer(s) does it touch — `data/`, `hooks/`,
    `services/`, `components/`? What type — bug / feature / refactor / analysis?
-2. **Select skills** from `catalog.md`:
-   - Editing any `src/**` code → always load **knowledge-code-style**.
-   - Data fetch / enrichment / cache / API / `data/` / `hooks/` / `services/` → **knowledge-data-pipeline**.
-   - Table / columns / filters / modals / keybindings / `components/` → **knowledge-table-ui**.
-   - "Where does X live" / cross-layer / onboarding → **knowledge-architecture**.
+2. **Select knowledge/task sources** from `catalog.md`:
+   - Editing any `src/**` code → always retrieve CoALA **`knowledge-code-style`**.
+   - Data fetch / enrichment / cache / API / `data/` / `hooks/` / `services/` → CoALA **`knowledge-data-pipeline`**.
+   - Table / columns / filters / modals / keybindings / `components/` → CoALA **`knowledge-table-ui`**.
+   - "Where does X live" / cross-layer / onboarding → CoALA **`knowledge-architecture`**.
    - Matches a known recipe → the matching **task-*** skill (see below).
-3. **Build the chain:** load knowledge skills first, then follow the task skill's
-   procedure. Independent read-only investigation can fan out to subagents (isolated
+3. **Build the chain:** retrieve the CoALA knowledge records first, then follow the task
+   skill's procedure. Independent read-only investigation can fan out to subagents (isolated
    context); keep edits in the main session.
-4. **Load knowledge before implementing.** Read the selected SKILL.md bodies (and
+4. **Load knowledge before implementing.** Retrieve the selected CoALA records
+   (`coala.py search "<terms>" --tags <skill>`) and read the task SKILL.md bodies (and
    only the `references/` you need) before the first edit.
 5. **Validate.** Any code change ends by running **task-build-and-validate**
    (`npm run typecheck && npm run lint`; `npm run build` for shipped changes).
    There is no test runner in this repo — do not invent one.
-6. **Evolve.** At task end, run the task skill's `<evolution>` step. If the work
-   revealed a genuinely new knowledge area, invoke **meta-skill-evolution**.
+6. **Evolve.** At task end, run the task skill's learning step (memória CoALA local). If the work
+   revealed a genuinely new knowledge area, invoke **a memória CoALA local (`coala.py add`)**.
 
 ## Task → skill quick map
 
@@ -43,8 +44,8 @@ re-deriving it from a cold scan.
 
 ## Rules
 
-- If no skill covers the task, do the work using `knowledge-code-style` + the
-  relevant layer skill, then invoke `meta-skill-evolution` to propose capturing it.
+- If no skill covers the task, do the work using CoALA `knowledge-code-style` + the
+  relevant layer record, then invoke the local CoALA memory (`coala.py add`) to propose capturing it.
 - On ambiguity between two skills, prefer the more specific layer skill.
 - Never skip validation, and never skip the evolution step at completion.
 - A new public symbol is only "done" once it is re-exported from `src/index.ts`.
